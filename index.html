@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suboptimal weight outcome risk calculator after metabolic and bariatric surgery</title>
+<meta name="description" content="Preoperative risk of suboptimal initial weight loss and weight recurrence within 3 years after metabolic and bariatric surgery.">
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2430; --muted: #5b6675; --line: #dde2e8;
+    --accent: #1f5fa8; --accent-soft: #e6eef8; --bar: #1f5fa8; --track: #e9edf2;
+    --low: #2f7d4f; --mid: #a86a12; --high: #b23a3a; --err: #b23a3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161c; --card: #1a2029; --ink: #e6eaf0; --muted: #9aa6b5; --line: #2c3542;
+      --accent: #7fb0ea; --accent-soft: #1f2b3a; --bar: #7fb0ea; --track: #2a323e;
+      --low: #6cc18f; --mid: #e0a85a; --high: #ec8080; --err: #ec8080;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 28px 18px 48px; }
+  h1 { font-size: 1.45rem; line-height: 1.3; margin: 0 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 18px; }
+  h2 { font-size: 1.05rem; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 22px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .field.full { grid-column: 1 / -1; }
+  .label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .hint { color: var(--muted); font-size: 0.86rem; margin-top: 4px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 0; }
+  .seg legend { padding: 0; }
+  .seg label { flex: 1 1 auto; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+               display: flex; align-items: center; gap: 8px; min-width: 120px; }
+  .seg input { accent-color: var(--accent); }
+  .seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .row { display: flex; gap: 8px; }
+  input[type=number], select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line);
+         border-radius: 8px; padding: 8px 10px; width: 100%; }
+  .row select { width: auto; flex: 0 0 auto; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.92rem; }
+  .err { color: var(--err); font-size: 0.86rem; margin-top: 4px; min-height: 0; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; font-size: 0.86rem; text-decoration: underline; }
+  .bmi-helper { display: none; margin-top: 8px; gap: 8px; }
+  .bmi-helper.open { display: flex; }
+  .result { margin-bottom: 18px; }
+  .result:last-child { margin-bottom: 0; }
+  .rhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .rname { font-weight: 600; }
+  .rval { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rdesc { color: var(--muted); font-size: 0.88rem; margin: 2px 0 8px; }
+  .track { position: relative; height: 12px; background: var(--track); border-radius: 6px; }
+  .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 6px; width: 0; transition: width .25s; }
+  .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--muted); }
+  .ticklabels { position: relative; height: 18px; font-size: 0.75rem; color: var(--muted); }
+  .ticklabels span { position: absolute; transform: translateX(-50%); top: 2px; }
+  .group { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 0.9rem; border: 1px solid currentColor; }
+  .g-low { color: var(--low); } .g-mid { color: var(--mid); } .g-high { color: var(--high); }
+  .status { color: var(--muted); font-size: 0.86rem; margin-top: 10px; }
+  .empty { color: var(--muted); }
+  details { border-top: 1px solid var(--line); padding: 12px 0; }
+  details:first-of-type { border-top: 0; padding-top: 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p, details li { font-size: 0.92rem; }
+  table { border-collapse: collapse; font-size: 0.9rem; margin: 8px 0; }
+  td, th { border-bottom: 1px solid var(--line); padding: 4px 12px 4px 0; text-align: left; font-variant-numeric: tabular-nums; }
+  code { font-size: 0.88rem; }
+  footer { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Risk of suboptimal weight outcomes within 3 years after metabolic and bariatric surgery</h1>
+  <p class="sub">Preoperative calculator for adults undergoing a primary procedure, once the procedure has been chosen. Model developed in 873 patients and temporally validated in 453 patients.</p>
+
+  <section class="card" aria-labelledby="in-h">
+    <h2 id="in-h">Preoperative information</h2>
+    <form id="f" class="grid" novalidate onsubmit="return false">
+      <fieldset class="field full seg" id="proc">
+        <legend class="label">Planned procedure</legend>
+        <label><input type="radio" name="proc" value="restrictive"> Restrictive (mainly sleeve gastrectomy)</label>
+        <label><input type="radio" name="proc" value="jjb"> Sleeve gastrectomy with jejunojejunal bypass</label>
+        <label><input type="radio" name="proc" value="bypass"> Primary bypass (RYGB or OAGB)</label>
+      </fieldset>
+
+      <fieldset class="field seg">
+        <legend class="label">Sex</legend>
+        <label><input type="radio" name="sex" value="0"> Female</label>
+        <label><input type="radio" name="sex" value="1"> Male</label>
+      </fieldset>
+
+      <div class="field">
+        <label class="label" for="age">Age (years)</label>
+        <input type="number" id="age" inputmode="decimal" min="18" max="90" step="1" placeholder="e.g. 35">
+        <div class="err" id="age-err"></div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="bmi">Body mass index (kg/m²)</label>
+        <input type="number" id="bmi" inputmode="decimal" min="20" max="90" step="0.1" placeholder="e.g. 38.0">
+        <button type="button" class="linkbtn" id="bmi-toggle" aria-expanded="false">Calculate from height and weight</button>
+        <div class="bmi-helper" id="bmi-helper">
+          <input type="number" id="ht" inputmode="decimal" placeholder="Height, cm" aria-label="Height in cm">
+          <input type="number" id="wt" inputmode="decimal" placeholder="Weight, kg" aria-label="Weight in kg">
+        </div>
+        <div class="err" id="bmi-err"></div>
+      </div>
+
+      <fieldset class="field seg">
+        <legend class="label">Diagnosed diabetes</legend>
+        <label><input type="radio" name="dm" value="0"> No</label>
+        <label><input type="radio" name="dm" value="1"> Yes</label>
+        <div class="hint" style="flex-basis:100%">In the model, diabetes is a recorded diagnosis or A1C ≥6.5%; an A1C ≥6.5% counts as diabetes automatically.</div>
+      </fieldset>
+
+      <div class="field">
+        <label class="label" for="a1c">Glycated hemoglobin (A1C)</label>
+        <div class="row">
+          <input type="number" id="a1c" inputmode="decimal" step="0.1" placeholder="e.g. 5.8">
+          <select id="a1c-u" aria-label="A1C unit"><option value="pct">%</option><option value="mmol">mmol/mol</option></select>
+        </div>
+        <div class="err" id="a1c-err"></div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="tg">Triglycerides</label>
+        <div class="row">
+          <input type="number" id="tg" inputmode="decimal" step="0.01" placeholder="e.g. 1.6">
+          <select id="tg-u" aria-label="Triglyceride unit"><option value="mmol">mmol/L</option><option value="mgdl">mg/dL</option></select>
+        </div>
+        <label class="check"><input type="checkbox" id="tg-na"> Not available (use the estimated value)</label>
+        <div class="err" id="tg-err"></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="out-h">
+    <h2 id="out-h">Predicted risks</h2>
+    <div id="out" aria-live="polite">
+      <p class="empty" id="empty">Complete all fields to see the predicted risks.</p>
+      <div id="res" hidden>
+        <div class="result">
+          <div class="rhead"><span class="rname">Suboptimal initial weight loss</span><span class="rval" id="r1"></span></div>
+          <div class="rdesc">Total weight loss &lt;20% at year 1</div>
+          <div class="track"><div class="fill" id="b1"></div></div>
+        </div>
+        <div class="result">
+          <div class="rhead"><span class="rname">Weight recurrence</span><span class="rval" id="r2"></span></div>
+          <div class="rdesc">Regain of ≥20% of the maximal weight loss at year 2 or 3, if total weight loss is ≥20% at year 1</div>
+          <div class="track"><div class="fill" id="b2"></div></div>
+        </div>
+        <div class="result">
+          <div class="rhead"><span class="rname">Either outcome within 3 years</span><span class="rval" id="r3"></span></div>
+          <div class="rdesc">First suboptimal weight outcome by year 3</div>
+          <div class="track"><div class="fill" id="b3"></div><div class="tick" style="left:32.4%"></div><div class="tick" style="left:45.6%"></div></div>
+          <div class="ticklabels"><span style="left:32.4%">32.4%</span><span style="left:45.6%">45.6%</span></div>
+          <span class="group" id="grp"></span>
+          <div class="status" id="grp-note"></div>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="info-h">
+    <h2 id="info-h">About the model</h2>
+    <details open>
+      <summary>Intended use</summary>
+      <p>The calculator estimates, before surgery, the risk of the two patterns of suboptimal weight outcome, to support counseling and planning of follow-up intensity. It was developed in adults undergoing primary metabolic and bariatric surgery at a university hospital in China (development cohort 2020–2022, median BMI 37.9 kg/m²) and validated unchanged in patients operated on in 2015–2019 at the same center (3-year AUC 0.73; expected-to-observed ratio 1.08). External validation and recalibration should precede use in other settings. It does not replace clinical judgment.</p>
+    </details>
+    <details>
+      <summary>Risk groups and decision curves</summary>
+      <p>Risk groups are the tertiles of predicted 3-year risk in the development cohort (cut-offs 32.4% and 45.6%). In the temporal validation cohort, the observed 3-year incidence was 20.0% in the low, 36.3% in the intermediate, and 58.1% in the high risk group. In decision curve analysis, using the model to select patients for intensified follow-up gave a higher net benefit than following up all or no patients at risk thresholds from about 20%–25% up to 50%.</p>
+    </details>
+    <details>
+      <summary>Model equation</summary>
+      <p>Linear predictor (LP):</p>
+      <table>
+        <tr><th>Term</th><th>Coefficient</th></tr>
+        <tr><td>Sleeve gastrectomy with jejunojejunal bypass (vs restrictive)</td><td>0.01476</td></tr>
+        <tr><td>Primary bypass (vs restrictive)</td><td>−0.05432</td></tr>
+        <tr><td>BMI, per kg/m²</td><td>−0.07522</td></tr>
+        <tr><td>Age, per year</td><td>0.01319</td></tr>
+        <tr><td>Male sex</td><td>0.34060</td></tr>
+        <tr><td>Diabetes</td><td>0.24540</td></tr>
+        <tr><td>A1C, per %</td><td>0.10039</td></tr>
+        <tr><td>ln(triglycerides, mmol/L)</td><td>0.05277</td></tr>
+      </table>
+      <p>Annual risks of a first event among patients still at risk: logit h<sub>1</sub> = 0.066961 + 1.949094 × LP; logit h<sub>2</sub> = −0.497664 + 0.797452 × LP; logit h<sub>3</sub> = 0.171756 + 0.797452 × LP.<br>
+      Suboptimal initial weight loss = h<sub>1</sub>; weight recurrence = 1 − (1 − h<sub>2</sub>)(1 − h<sub>3</sub>); either outcome within 3 years = 1 − (1 − h<sub>1</sub>)(1 − h<sub>2</sub>)(1 − h<sub>3</sub>).</p>
+      <p>If triglycerides are not available, ln(triglycerides) = 0.2776 + 0.02976 × jejunojejunal bypass − 0.09305 × primary bypass − 0.01219 × BMI + 0.003803 × age + 0.1896 × male + 0.1054 × diabetes + 0.09118 × A1C (%).<br>
+      Unit conversions: triglycerides mmol/L = mg/dL ÷ 88.57; A1C % = 0.09148 × mmol/mol + 2.152.</p>
+    </details>
+    <details>
+      <summary>Source</summary>
+      <p>Development and temporal validation of a preoperative model to predict suboptimal weight outcomes within 3 years after metabolic and bariatric surgery (manuscript under review). All calculations run in your browser; no data are sent or stored.</p>
+    </details>
+  </section>
+  <footer>Version 1.0</footer>
+</main>
+
+<script>
+/* ===== MODEL (Table 2 of the article) — keep in sync with the paper ===== */
+const MODEL = {
+  b: { jjb: 0.01476, bypass: -0.05432, bmi: -0.07522, age: 0.01319, male: 0.34060, dm: 0.24540, a1c: 0.10039, lntg: 0.05277 },
+  a1: 0.066961, s1: 1.949094, a2: -0.497664, a3: 0.171756, s23: 0.797452,
+  tg: { c: 0.2776, jjb: 0.02976, bypass: -0.09305, bmi: -0.01219, age: 0.003803, male: 0.1896, dm: 0.1054, a1c: 0.09118 },
+  cut: [0.324, 0.456]
+};
+function expit(z) { return 1 / (1 + Math.exp(-z)); }
+function lnTgEstimate(p) {
+  const t = MODEL.tg;
+  return t.c + t.jjb * (p.proc === "jjb") + t.bypass * (p.proc === "bypass") + t.bmi * p.bmi
+       + t.age * p.age + t.male * p.male + t.dm * p.dm + t.a1c * p.a1c;
+}
+/* p: {proc:'restrictive'|'jjb'|'bypass', bmi, age, male:0|1, dmDiagnosed:0|1, a1c (%), tg (mmol/L) or null} */
+function predict(p) {
+  const dm = (p.dmDiagnosed === 1 || p.a1c >= 6.5) ? 1 : 0;
+  const q = Object.assign({}, p, { dm: dm });
+  const lntg = (p.tg === null) ? lnTgEstimate(q) : Math.log(p.tg);
+  const b = MODEL.b;
+  const lp = b.jjb * (p.proc === "jjb") + b.bypass * (p.proc === "bypass") + b.bmi * p.bmi + b.age * p.age
+           + b.male * p.male + b.dm * dm + b.a1c * p.a1c + b.lntg * lntg;
+  const h1 = expit(MODEL.a1 + MODEL.s1 * lp);
+  const h2 = expit(MODEL.a2 + MODEL.s23 * lp);
+  const h3 = expit(MODEL.a3 + MODEL.s23 * lp);
+  return { lp: lp, dm: dm, tgEstimated: p.tg === null, year1: h1,
+           recurrence: 1 - (1 - h2) * (1 - h3), threeYear: 1 - (1 - h1) * (1 - h2) * (1 - h3) };
+}
+/* ===== END MODEL ===== */
+
+if (typeof document !== "undefined") {
+  const $ = (id) => document.getElementById(id);
+  const radio = (name) => { const el = document.querySelector('input[name="' + name + '"]:checked'); return el ? el.value : null; };
+  const num = (id) => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+  const pct = (x) => { const v = 100 * x; return v < 1 ? "<1%" : Math.round(v) + "%"; };
+
+  $("bmi-toggle").addEventListener("click", () => {
+    const h = $("bmi-helper"); const open = !h.classList.contains("open");
+    h.classList.toggle("open", open); $("bmi-toggle").setAttribute("aria-expanded", String(open));
+  });
+  ["ht", "wt"].forEach((id) => $(id).addEventListener("input", () => {
+    const h = num("ht"), w = num("wt");
+    if (h && w && h > 100 && h < 230 && w > 30 && w < 350) { $("bmi").value = (w / Math.pow(h / 100, 2)).toFixed(1); update(); }
+  }));
+  $("tg-na").addEventListener("change", () => { $("tg").disabled = $("tg-u").disabled = $("tg-na").checked; update(); });
+  $("f").addEventListener("input", update);
+  $("f").addEventListener("change", update);
+
+  function check(id, val, lo, hi, msg) {
+    const bad = val !== null && (isNaN(val) || val < lo || val > hi);
+    $(id + "-err").textContent = bad ? msg : "";
+    return bad ? NaN : val;
+  }
+
+  function update() {
+    const proc = radio("proc"), sex = radio("sex"), dmd = radio("dm");
+    const age = check("age", num("age"), 18, 90, "Enter an age from 18 to 90 years.");
+    const bmi = check("bmi", num("bmi"), 20, 90, "Enter a BMI from 20 to 90 kg/m².");
+    let a1c = num("a1c");
+    if (a1c !== null && $("a1c-u").value === "mmol") a1c = 0.09148 * a1c + 2.152;
+    a1c = check("a1c", a1c, 4, 20, "Enter an A1C from 4% to 20% (20 to 195 mmol/mol).");
+    const tgNA = $("tg-na").checked;
+    let tg = tgNA ? null : num("tg");
+    if (tg !== null && $("tg-u").value === "mgdl") tg = tg / 88.57;
+    if (!tgNA) tg = check("tg", tg, 0.2, 50, "Enter triglycerides from 0.2 to 50 mmol/L (18 to 4,400 mg/dL)."); else $("tg-err").textContent = "";
+
+    const ready = proc && sex !== null && dmd !== null && [age, bmi, a1c].every((v) => v !== null && !isNaN(v))
+                  && (tgNA || (tg !== null && !isNaN(tg)));
+    $("empty").hidden = ready; $("res").hidden = !ready;
+    if (!ready) return;
+
+    const r = predict({ proc: proc, bmi: bmi, age: age, male: Number(sex), dmDiagnosed: Number(dmd), a1c: a1c, tg: tg });
+    $("r1").textContent = pct(r.year1); $("b1").style.width = (100 * r.year1).toFixed(1) + "%";
+    $("r2").textContent = pct(r.recurrence); $("b2").style.width = (100 * r.recurrence).toFixed(1) + "%";
+    $("r3").textContent = pct(r.threeYear); $("b3").style.width = (100 * r.threeYear).toFixed(1) + "%";
+    const g = r.threeYear < MODEL.cut[0] ? ["Low risk group", "g-low", "20.0%"]
+            : r.threeYear < MODEL.cut[1] ? ["Intermediate risk group", "g-mid", "36.3%"]
+            : ["High risk group", "g-high", "58.1%"];
+    $("grp").textContent = g[0]; $("grp").className = "group " + g[1];
+    $("grp-note").textContent = "Observed 3-year incidence in this group in the temporal validation cohort: " + g[2] + ".";
+    const notes = [];
+    if (r.dm === 1 && Number(dmd) === 0) notes.push("Diabetes was set to yes because A1C is ≥6.5%.");
+    if (r.tgEstimated) notes.push("Triglycerides were estimated from the other predictors.");
+    $("status").textContent = notes.join(" ");
+  }
+}
+if (typeof module !== "undefined") { module.exports = { predict: predict, MODEL: MODEL }; }
+</script>
+</body>
+</html>
